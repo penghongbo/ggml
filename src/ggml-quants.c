@@ -33,6 +33,9 @@
 #define bool _Bool
 // IBM TODO
 // how about check GCC version to support vec_xl_len?
+//#ifndef vec_xl_len
+//#error "Please compile with GCC 9 or later"
+//#endif
 #else
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <intrin.h>
@@ -4337,8 +4340,7 @@ void ggml_vec_dot_q4_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector float vd = vec_mul(vxd, vyd);
 
         vector float vxmin = vec_splats(GGML_FP16_TO_FP32(x[i].m));
-        // IBM TODO: whether to use vec_xl_len?
-        vector float vys = {GGML_FP16_TO_FP32(y[i].s), 0.0f, 0.0f, 0.0f}; // vec_xl_len(&y[i].s, 4);
+        vector float vys = {GGML_FP16_TO_FP32(y[i].s), 0.0f, 0.0f, 0.0f};
         vsumf0 = vec_madd(vxmin, vys, vsumf0);
 
         vector signed char qxs = (vector signed char)vec_xl( 0, x[i].qs);
@@ -5068,8 +5070,7 @@ void ggml_vec_dot_q5_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector float vd = vec_mul(vxd, vyd);
 
         vector float vxmin = vec_splats(GGML_FP16_TO_FP32(x[i].m));
-        // IBM TODO
-        vector float vys = vec_xl_len(&y[i].s, 4);
+        vector float vys = {GGML_FP16_TO_FP32(y[i].s), 0.f, 0.f, 0.f};
         vsumf0 = vec_madd(vxmin, vys, vsumf0);
 
         // IBM TODO
@@ -6153,9 +6154,9 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector float vdmin = vec_mul(vxmin, vyd);
 
         // IBM TODO
-        vector signed short q8ysums0 = vec_xl_len( y[i].bsums, 8);
+        vector signed short q8ysums0 = {y[i].bsums[0], y[i].bsums[1], y[i].bsums[2], y[i].bsums[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0}; //vec_xl_len(y[i].bsums, 8);
 
-        vector signed char q2xmins = (vector signed char)vec_xl_len(x[i].scales, 4);
+        vector signed char q2xmins = {x[i].scales[0], x[i].scales[1], x[i].scales[2], x[i].scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}; //(vector signed char)vec_xl_len(x[i].scales, 4);
         vector signed char vscales = vec_and(q2xmins, lowScaleMask);
 
         q2xmins = vec_sr(q2xmins, v4);
@@ -6904,7 +6905,6 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
 
     *s = vec_extract(vsumf0, 0);
-
 #else
     // scalar version
     // This function is written like this so the compiler can manage to vectorize most of it
@@ -7298,7 +7298,7 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 
         // IBM TODO
         vector signed char vscales = (vector signed char)vec_xl_len(scales, 8);
-        vector signed char qxhs0 = (vector signed char)vec_xl_len(x[i].hmask, 8);
+        vector signed char qxhs0 = {x[i].hmask[0], x[i].hmask[1], x[i].hmask[2], x[i].hmask[3], x[i].hmask[4], x[i].hmask[5], x[i].hmask[6], x[i].hmask[7], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}; //(vector signed char)vec_xl_len(x[i].hmask, 8);
         qxhs0 = vec_or(qxhs0, vec_sr(vec_sld(qxhs0, qxhs0, 8), (vector unsigned char)v1));
 
         vscales = vec_sub(vscales, off);
@@ -8125,12 +8125,13 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         s16[1] = (b[0] >> 4) & 0x0f0f;
 
         // IBM TODO
-        vector signed char utmps = (vector signed char)vec_xl_len( scales, 4);
+        vector signed char utmps = {scales[0], scales[1], scales[2], scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}; //(vector signed char)vec_xl_len(scales, 4);
         vector signed short vscales = (vector signed short)vec_unpackh(utmps);
         vector signed short q4xmins0 = vec_mergeh(vscales, vscales);
+        q4xmins0 = vec_sld(q4xmins0, q4xmins0, 8);
 
         // IBM TODO
-        vector signed short q8ysums0 = vec_xl_len( y[i].bsums, 8);
+        vector signed short q8ysums0 = {y[i].bsums[0], y[i].bsums[1], y[i].bsums[2], y[i].bsums[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0}; //vec_xl_len(y[i].bsums, 8);
 
         vector signed int prod0 = vec_mule(q4xmins0, q8ysums0);
         vector signed int prod1 = vec_mulo(q4xmins0, q8ysums0);
@@ -9034,7 +9035,7 @@ void ggml_vec_dot_q5_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed char qxs11 = (vector signed char)vec_sr(qxs1, v4);
 
         // IBM TODO
-        vector signed char qxhs = (vector signed char)vec_xl_len(x[i].qh, 8);
+        vector signed char qxhs = {x[i].qh[0], x[i].qh[1], x[i].qh[2], x[i].qh[3], x[i].qh[4], x[i].qh[5], x[i].qh[6], x[i].qh[7], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}; //(vector signed char)vec_xl_len(x[i].qh, 8);
         vector signed char qxhs0 = vec_or(qxhs, vec_sr(vec_sld(qxhs, qxhs, 8), v1));
         vector signed char qxhs1 = vec_sr(qxhs0, v2);
         vector signed char qxh00 = vec_sl(vec_andc((vector signed char)v1, qxhs0), v4);
@@ -9058,7 +9059,7 @@ void ggml_vec_dot_q5_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv11 = vec_add(vec_mule(q5x11, q8y11), vec_mulo(q5x11, q8y11));
 
         // IBM TODO
-        vector signed short vs = (vector signed short)vec_unpackh(vec_xl_len(x[i].scales, 4));
+        vector signed short vs = (vector signed short)vec_unpackh((vector signed char){x[i].scales[0], x[i].scales[1], x[i].scales[2], x[i].scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}); // (vector signed short)vec_unpackh(vec_xl_len(x[i].scales, 4));
         vector signed short vs0 = vec_splat(vs, 0);
         vector signed short vs1 = vec_splat(vs, 1);
         vector signed short vs2 = vec_splat(vs, 2);
@@ -9608,7 +9609,9 @@ void ggml_vec_dot_q6_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 
             // IBM TODO
 #if 1
-            vector signed short vscales = vec_unpackh(vec_xl_len(qs, 8));
+            // IBM TODO merge with v0?
+            //vector signed short vscales = vec_unpackh(vec_xl_len(qs, 8));
+            vector signed short vscales = vec_unpackh((vector signed char){qs[0], qs[1], qs[2], qs[3], qs[4], qs[5], qs[6], qs[7], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0});
             qs += 8;
 
             vector signed short vs0 = vec_splat(vscales, 0);
@@ -10026,7 +10029,7 @@ void ggml_vec_dot_q6_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv11 = vec_add(vec_mule(q6x11, q8y11), vec_mulo(q6x11, q8y11));
 
         // IBM TODO
-        vector signed short vs = (vector signed short)vec_unpackh(vec_xl_len(x[i].scales, 4));
+        vector signed short vs = (vector signed short)vec_unpackh((vector signed char){x[i].scales[0], x[i].scales[1], x[i].scales[2], x[i].scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}); // (vector signed short)vec_unpackh(vec_xl_len(x[i].scales, 4));
         vector signed short vs0 = vec_splat(vs, 0);
         vector signed short vs1 = vec_splat(vs, 1);
         vector signed short vs2 = vec_splat(vs, 2);
@@ -11222,14 +11225,14 @@ void ggml_vec_dot_iq3_xxs_q8_K(int n, float * restrict s, size_t bs, const void 
             memcpy(aux32, signs, 2*sizeof(uint32_t));
             signs += 8;
 
-            vector signed char vsigns0 = (vector signed char)vec_splats(*(signs64 + ((aux32[0] >>  0) & 127)));
-            vector signed char vsigns1 = (vector signed char)vec_splats(*(signs64 + ((aux32[0] >> 14) & 127)));
-            vector signed char vsigns2 = (vector signed char)vec_splats(*(signs64 + ((aux32[1] >>  0) & 127)));
-            vector signed char vsigns3 = (vector signed char)vec_splats(*(signs64 + ((aux32[1] >> 14) & 127)));
-            vector signed char vsigns4 = (vector signed char)vec_splats(*(signs64 + ((aux32[0] >>  7) & 127)));
-            vector signed char vsigns5 = (vector signed char)vec_splats(*(signs64 + ((aux32[0] >> 21) & 127)));
-            vector signed char vsigns6 = (vector signed char)vec_splats(*(signs64 + ((aux32[1] >>  7) & 127)));
-            vector signed char vsigns7 = (vector signed char)vec_splats(*(signs64 + ((aux32[1] >> 21) & 127)));
+            vector signed char vsigns0 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[0] >>  0) & 127))));
+            vector signed char vsigns1 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[0] >> 14) & 127))));
+            vector signed char vsigns2 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[1] >>  0) & 127))));
+            vector signed char vsigns3 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[1] >> 14) & 127))));
+            vector signed char vsigns4 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[0] >>  7) & 127))));
+            vector signed char vsigns5 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[0] >> 21) & 127))));
+            vector signed char vsigns6 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[1] >>  7) & 127))));
+            vector signed char vsigns7 = (vector signed char)vec_splats((unsigned long long)(*(signs64 + ((aux32[1] >> 21) & 127))));
 
             vsigns0 = (vector signed char)vec_mergeh((vector unsigned long long)vsigns0, (vector unsigned long long)vsigns4);
             vsigns1 = (vector signed char)vec_mergeh((vector unsigned long long)vsigns1, (vector unsigned long long)vsigns5);
@@ -11854,7 +11857,9 @@ void ggml_vec_dot_iq1_s_q8_K  (int n, float * restrict s, size_t bs, const void 
             vsumi6 = vec_add(vec_mulo(qv2, vscales23), vsumi6);
             vsumi7 = vec_add(vec_mulo(qv3, vscales23), vsumi7);
 
-            vector signed short q8ysums = vec_xl_len(qs, 8);
+            // IBM TODO
+            vector signed short q8ysums = {qs[0], qs[1], qs[2], qs[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0};
+            //vector signed short q8ysums = vec_xl_len(qs, 8);
             qs += 4;
             q8ysums = vec_mergeh(q8ysums, (vector signed short)v0);
 
