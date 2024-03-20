@@ -33,9 +33,9 @@
 #define bool _Bool
 // IBM TODO
 // how about check GCC version to support vec_xl_len?
-//#ifndef vec_xl_len
-//#error "Please compile with GCC 9 or later"
-//#endif
+#if (defined(__clang__) && (__clang_major__ < 15)) || (defined(__GNUG__) && (__GNUC__ < 8))
+#error "Please compile with C/C++ compiler with vec_xl_len supported"
+#endif
 #else
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <intrin.h>
@@ -8125,13 +8125,26 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         s16[1] = (b[0] >> 4) & 0x0f0f;
 
         // IBM TODO
-        vector signed char utmps = {scales[0], scales[1], scales[2], scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0}; //(vector signed char)vec_xl_len(scales, 4);
+#if 1
+#if 1
+        vector signed char utmps = (vector signed char)vec_xl_len((uint8_t *)scales, 4);
+#else
+        vector signed char utmps = {scales[0], scales[1], scales[2], scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
+#endif
+#else
+        vector signed char utmps = vec_splats((int8_t)0);
+        utmps = vec_insert((signed char)scales[0], utmps, 0);
+        utmps = vec_insert((signed char)scales[1], utmps, 1);
+        utmps = vec_insert((signed char)scales[2], utmps, 2);
+        utmps = vec_insert((signed char)scales[3], utmps, 3);
+#endif
         vector signed short vscales = (vector signed short)vec_unpackh(utmps);
         vector signed short q4xmins0 = vec_mergeh(vscales, vscales);
         q4xmins0 = vec_sld(q4xmins0, q4xmins0, 8);
 
         // IBM TODO
-        vector signed short q8ysums0 = {y[i].bsums[0], y[i].bsums[1], y[i].bsums[2], y[i].bsums[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0}; //vec_xl_len(y[i].bsums, 8);
+        //vector signed short q8ysums0 = {y[i].bsums[0], y[i].bsums[1], y[i].bsums[2], y[i].bsums[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0}; //vec_xl_len(y[i].bsums, 8);
+        vector signed short q8ysums0 = vec_xl_len((int16_t *)(y[i].bsums), 8);
 
         vector signed int prod0 = vec_mule(q4xmins0, q8ysums0);
         vector signed int prod1 = vec_mulo(q4xmins0, q8ysums0);
