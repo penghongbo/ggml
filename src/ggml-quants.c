@@ -4683,7 +4683,10 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector float vd = vec_mul(vxd, vyd);
 
 // IBM TODO: if 1-1 seems to be the best with less insn. Need to check with perf test
-#if 1
+// IBM TODO: on P10, 1-1 is not good for GCC12. But acceptable with AT16 and OpenXL.
+// IBM TODO: on P10, 1-0 is not good for AT16. But acceptable with GCC12 and OpenXL.
+// IBM TODO: on P10, 0-* is acceptable for all. But OpenXL drops from 22 to 19.
+#if 0
 #if 1
         uint32_t qh;
         uint64_t tmp[4];
@@ -4706,6 +4709,7 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed char qh1 = (vector signed char)vec_xl( 0, (signed int*)(tmp + 2));
 #else
         const vector unsigned char v0 = vec_splats((unsigned char)0x0);
+        // IBM TODO
         vector unsigned short xqh = (vector unsigned short)vec_mergeh(vec_xl_len(x[i].qh, 4), v0);
         uint16_t gindex[8] __attribute__ ((aligned(16)));
         vec_xst(xqh, 0, gindex);
@@ -5696,6 +5700,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
+    const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
@@ -5753,6 +5758,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q2 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
+        // IBM TODO: GCC 12.2 seems to unroll this loop as j = 0 or 1. Then VSR spills. mtune=p10 and O3 seems to be better.
         for (int j = 0; j < QK_K/128; ++j) {
             vector signed char qxs0 = (vector signed char)vec_xl( 0, q2);
             vector signed char qxs1 = (vector signed char)vec_xl(16, q2);
@@ -5787,14 +5793,15 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short qv6 = vec_add(vec_mule(q2x12, q8y12), vec_mulo(q2x12, q8y12));
             vector signed short qv7 = vec_add(vec_mule(q2x13, q8y13), vec_mulo(q2x13, q8y13));
 
-            vector signed short vs0 = vec_unpackh(vec_splat(vscales, 0));
-            vector signed short vs1 = vec_unpackh(vec_splat(vscales, 1));
-            vector signed short vs2 = vec_unpackh(vec_splat(vscales, 2));
-            vector signed short vs3 = vec_unpackh(vec_splat(vscales, 3));
-            vector signed short vs4 = vec_unpackh(vec_splat(vscales, 4));
-            vector signed short vs5 = vec_unpackh(vec_splat(vscales, 5));
-            vector signed short vs6 = vec_unpackh(vec_splat(vscales, 6));
-            vector signed short vs7 = vec_unpackh(vec_splat(vscales, 7));
+            vector signed short vscales_h = (vector signed short)vec_mergeh(vscales, v0);
+            vector signed short vs0 = vec_splat(vscales_h, 0);
+            vector signed short vs1 = vec_splat(vscales_h, 1);
+            vector signed short vs2 = vec_splat(vscales_h, 2);
+            vector signed short vs3 = vec_splat(vscales_h, 3);
+            vector signed short vs4 = vec_splat(vscales_h, 4);
+            vector signed short vs5 = vec_splat(vscales_h, 5);
+            vector signed short vs6 = vec_splat(vscales_h, 6);
+            vector signed short vs7 = vec_splat(vscales_h, 7);
             vscales = vec_sld(vscales, vscales, 8);
 
 #if 1
@@ -6136,6 +6143,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
+    const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
@@ -6184,10 +6192,11 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv2 = vec_add(vec_mule(q2x02, q8y02), vec_mulo(q2x02, q8y02));
         vector signed short qv3 = vec_add(vec_mule(q2x03, q8y03), vec_mulo(q2x03, q8y03));
 
-        vector signed short vs0 = vec_unpackh(vec_splat(vscales, 0));
-        vector signed short vs1 = vec_unpackh(vec_splat(vscales, 1));
-        vector signed short vs2 = vec_unpackh(vec_splat(vscales, 2));
-        vector signed short vs3 = vec_unpackh(vec_splat(vscales, 3));
+        vector signed short vscales_h = (vector signed short)vec_mergeh(vscales, v0);
+        vector signed short vs0 = vec_splat(vscales_h, 0);
+        vector signed short vs1 = vec_splat(vscales_h, 1);
+        vector signed short vs2 = vec_splat(vscales_h, 2);
+        vector signed short vs3 = vec_splat(vscales_h, 3);
 
 // IBM TODO: whether use short madd instead of short mule/mulo, then int add? It is not risky here as 2+8+4 less than 15 bits.
 #if 1
