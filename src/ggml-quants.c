@@ -5700,7 +5700,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
-    const vector signed char v0 = vec_splats((signed char)0x0);
+    //const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
@@ -5793,7 +5793,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short qv6 = vec_add(vec_mule(q2x12, q8y12), vec_mulo(q2x12, q8y12));
             vector signed short qv7 = vec_add(vec_mule(q2x13, q8y13), vec_mulo(q2x13, q8y13));
 
-            vector signed short vscales_h = (vector signed short)vec_mergeh(vscales, v0);
+            vector signed short vscales_h = vec_unpackh(vscales);
             vector signed short vs0 = vec_splat(vscales_h, 0);
             vector signed short vs1 = vec_splat(vscales_h, 1);
             vector signed short vs2 = vec_splat(vscales_h, 2);
@@ -6143,7 +6143,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
-    const vector signed char v0 = vec_splats((signed char)0x0);
+    //const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
@@ -6192,7 +6192,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv2 = vec_add(vec_mule(q2x02, q8y02), vec_mulo(q2x02, q8y02));
         vector signed short qv3 = vec_add(vec_mule(q2x03, q8y03), vec_mulo(q2x03, q8y03));
 
-        vector signed short vscales_h = (vector signed short)vec_mergeh(vscales, v0);
+        vector signed short vscales_h = vec_unpackh(vscales);
         vector signed short vs0 = vec_splat(vscales_h, 0);
         vector signed short vs1 = vec_splat(vscales_h, 1);
         vector signed short vs2 = vec_splat(vscales_h, 2);
@@ -6833,14 +6833,15 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed char q8y13 = vec_xl(112, q8);
             q8 += 128;
 
-            vector signed short vs0 = vec_unpackh(vec_splat(vscales, 0));
-            vector signed short vs1 = vec_unpackh(vec_splat(vscales, 1));
-            vector signed short vs2 = vec_unpackh(vec_splat(vscales, 2));
-            vector signed short vs3 = vec_unpackh(vec_splat(vscales, 3));
-            vector signed short vs4 = vec_unpackh(vec_splat(vscales, 4));
-            vector signed short vs5 = vec_unpackh(vec_splat(vscales, 5));
-            vector signed short vs6 = vec_unpackh(vec_splat(vscales, 6));
-            vector signed short vs7 = vec_unpackh(vec_splat(vscales, 7));
+            vector signed short vscales_h = vec_unpackh(vscales);
+            vector signed short vs0 = vec_splat(vscales_h, 0);
+            vector signed short vs1 = vec_splat(vscales_h, 1);
+            vector signed short vs2 = vec_splat(vscales_h, 2);
+            vector signed short vs3 = vec_splat(vscales_h, 3);
+            vector signed short vs4 = vec_splat(vscales_h, 4);
+            vector signed short vs5 = vec_splat(vscales_h, 5);
+            vector signed short vs6 = vec_splat(vscales_h, 6);
+            vector signed short vs7 = vec_splat(vscales_h, 7);
             vscales = vec_sld(vscales, vscales, 8);
 
             vector signed short qv00 = vec_add(vec_mule(q3x00, q8y00), vec_mulo(q3x00, q8y00));
@@ -7335,10 +7336,11 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed char q8y10 = vec_xl( 32, y[i].qs);
         vector signed char q8y11 = vec_xl( 48, y[i].qs);
 
-        vector signed short vs0 = vec_unpackh(vec_splat(vscales, 0));
-        vector signed short vs1 = vec_unpackh(vec_splat(vscales, 1));
-        vector signed short vs2 = vec_unpackh(vec_splat(vscales, 2));
-        vector signed short vs3 = vec_unpackh(vec_splat(vscales, 3));
+        vector signed short vscales_h = vec_unpackh(vscales);
+        vector signed short vs0 = vec_splat(vscales_h, 0);
+        vector signed short vs1 = vec_splat(vscales_h, 1);
+        vector signed short vs2 = vec_splat(vscales_h, 2);
+        vector signed short vs3 = vec_splat(vscales_h, 3);
 
         vector signed short qv00 = vec_add(vec_mule(q3x00, q8y00), vec_mulo(q3x00, q8y00));
         vector signed short qv10 = vec_add(vec_mule(q3x10, q8y10), vec_mulo(q3x10, q8y10));
