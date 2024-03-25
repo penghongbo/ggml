@@ -4073,10 +4073,15 @@ void ggml_vec_dot_q4_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv0 = vec_add(vec_mule(q4x0, q8y0), vec_mulo(q4x0, q8y0));
         vector signed short qv1 = vec_add(vec_mule(q4x1, q8y1), vec_mulo(q4x1, q8y1));
 
-        vsumf0 = vec_madd(vec_ctf(vec_unpackh(qv0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackl(qv0), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackh(qv1), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackl(qv1), 0), vd, vsumf3);
+        vector signed int vsumi0 = vec_unpackh(qv0);
+        vector signed int vsumi1 = vec_unpackl(qv0);
+        vector signed int vsumi2 = vec_unpackh(qv1);
+        vector signed int vsumi3 = vec_unpackl(qv1);
+
+        vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
+        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
+        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
+        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
     }
 
     vsumf0 = vec_add(vsumf0, vsumf2);
@@ -4700,16 +4705,13 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed char q8y0 = vec_xl(  0, y[i].qs);
         vector signed char q8y1 = vec_xl( 16, y[i].qs);
 
-        vector signed short qv0 = vec_mule(q5x0, q8y0);
-        vector signed short qv1 = vec_mulo(q5x0, q8y0);
-        vector signed short qv2 = vec_mule(q5x1, q8y1);
-        vector signed short qv3 = vec_mulo(q5x1, q8y1);
+        vector signed short qv0 = vec_add(vec_mule(q5x0, q8y0), vec_mulo(q5x0, q8y0));
+        vector signed short qv1 = vec_add(vec_mule(q5x1, q8y1), vec_mulo(q5x1, q8y1));
 
-        // IBM TODO
-        vector signed int vsumi0 = vec_add(vec_unpackh(qv0), vec_unpackh(qv1));
-        vector signed int vsumi1 = vec_add(vec_unpackl(qv0), vec_unpackl(qv1));
-        vector signed int vsumi2 = vec_add(vec_unpackh(qv2), vec_unpackh(qv3));
-        vector signed int vsumi3 = vec_add(vec_unpackl(qv2), vec_unpackl(qv3));
+        vector signed int vsumi0 = vec_unpackh(qv0);
+        vector signed int vsumi1 = vec_unpackl(qv0);
+        vector signed int vsumi2 = vec_unpackh(qv1);
+        vector signed int vsumi3 = vec_unpackl(qv1);
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
