@@ -5707,8 +5707,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf2 = vec_nmsub(vec_ctf(prod2, 0), vdmin, vsumf2);
         vsumf3 = vec_nmsub(vec_ctf(prod3, 0), vdmin, vsumf3);
 
-// IBM TODO: whether use short madd instead of short mule/mulo, then int add?
-#if 1
         vector signed int vsumi0 = vec_splats((int32_t)0);
         vector signed int vsumi1 = vec_splats((int32_t)0);
         vector signed int vsumi2 = vec_splats((int32_t)0);
@@ -5717,12 +5715,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi5 = vec_splats((int32_t)0);
         vector signed int vsumi6 = vec_splats((int32_t)0);
         vector signed int vsumi7 = vec_splats((int32_t)0);
-#else
-        vector signed short vsumi0 = vec_splats((int16_t)0);
-        vector signed short vsumi1 = vec_splats((int16_t)0);
-        vector signed short vsumi2 = vec_splats((int16_t)0);
-        vector signed short vsumi3 = vec_splats((int16_t)0);
-#endif
 
         const uint8_t * restrict q2 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
@@ -5773,8 +5765,9 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short vs7 = vec_splat(vscales_h, 7);
             vscales = vec_sld(vscales, vscales, 8);
 
-#if 1
-            // Inner loop, 32 insn, Outer loop, 8 insn
+            // IBM TODO
+#if 0
+            // Inner loop, 32 insn, Outer loop, 12 insn
             vector signed int vsum0 = vec_add(vec_mule(qv0, vs0), vec_mulo(qv0, vs0));
             vector signed int vsum1 = vec_add(vec_mule(qv1, vs1), vec_mulo(qv1, vs1));
             vector signed int vsum2 = vec_add(vec_mule(qv2, vs2), vec_mulo(qv2, vs2));
@@ -5792,6 +5785,29 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vsumi5 = vec_add(vsum5, vsumi5);
             vsumi6 = vec_add(vsum6, vsumi6);
             vsumi7 = vec_add(vsum7, vsumi7);
+#else
+            // multiply by 4 more bits. short mul+madd should be ok as 2+8+4 twice. It is at most 15 bits.
+            // Inner loop, 24 insn, Outer loop, 12 insn. This seems to be better?
+            qv0 = vec_mul(qv0, vs0);
+            qv1 = vec_mul(qv1, vs1);
+            qv2 = vec_mul(qv2, vs2);
+            qv3 = vec_mul(qv3, vs3);
+
+            qv0 = vec_madd(qv4, vs4, qv0);
+            qv1 = vec_madd(qv5, vs5, qv1);
+            qv2 = vec_madd(qv6, vs6, qv2);
+            qv3 = vec_madd(qv7, vs7, qv3);
+
+            vsumi0 = vec_add(vec_unpackh(qv0), vsumi0);
+            vsumi1 = vec_add(vec_unpackh(qv1), vsumi1);
+            vsumi2 = vec_add(vec_unpackh(qv2), vsumi2);
+            vsumi3 = vec_add(vec_unpackh(qv3), vsumi3);
+
+            vsumi4 = vec_add(vec_unpackl(qv0), vsumi4);
+            vsumi5 = vec_add(vec_unpackl(qv1), vsumi5);
+            vsumi6 = vec_add(vec_unpackl(qv2), vsumi6);
+            vsumi7 = vec_add(vec_unpackl(qv3), vsumi7);
+#endif
         }
 
         vsumi0 = vec_add(vsumi0, vsumi4);
@@ -5803,30 +5819,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
         vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
         vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
-#else
-            // multiply by 4 more bits. short madd may be risky as 2+8+4 and then in a for loop. It is almost 15 bits.
-            // Inner loop, 8 insn, Outer loop, 24 insn. This seems to be better?
-            vsumi0 = vec_madd(qv0, vs0, vsumi0);
-            vsumi1 = vec_madd(qv2, vs2, vsumi1);
-            vsumi2 = vec_madd(qv4, vs4, vsumi2);
-            vsumi3 = vec_madd(qv6, vs6, vsumi3);
-
-            vsumi0 = vec_madd(qv1, vs1, vsumi0);
-            vsumi1 = vec_madd(qv3, vs3, vsumi1);
-            vsumi2 = vec_madd(qv5, vs5, vsumi2);
-            vsumi3 = vec_madd(qv7, vs7, vsumi3);
-        }
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackh(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackh(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackh(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackh(vsumi3), 0), vd, vsumf3);
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackl(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackl(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackl(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackl(vsumi3), 0), vd, vsumf3);
-#endif
     }
 
     vsumf0 = vec_add(vsumf0, vsumf2);
