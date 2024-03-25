@@ -6160,9 +6160,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short vs2 = vec_splat(vscales_h, 2);
         vector signed short vs3 = vec_splat(vscales_h, 3);
 
-// IBM TODO: whether use short madd instead of short mule/mulo, then int add? It is not risky here as 2+8+4 less than 15 bits.
-#if 1
-        // 20 insns. This seems to be better?
         vector signed int vsumi0 = vec_add(vec_mule(qv0, vs0), vec_mulo(qv0, vs0));
         vector signed int vsumi1 = vec_add(vec_mule(qv1, vs1), vec_mulo(qv1, vs1));
         vector signed int vsumi2 = vec_add(vec_mule(qv2, vs2), vec_mulo(qv2, vs2));
@@ -6172,23 +6169,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
         vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
         vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
-#else
-        // 28 insns
-        vector signed short vsumi0 = vec_mul(qv0, vs0);
-        vector signed short vsumi1 = vec_mul(qv1, vs1);
-        vector signed short vsumi2 = vec_mul(qv2, vs2);
-        vector signed short vsumi3 = vec_mul(qv3, vs3);
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackh(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackh(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackh(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackh(vsumi3), 0), vd, vsumf3);
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackl(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackl(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackl(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackl(vsumi3), 0), vd, vsumf3);
-#endif
     }
 
     vsumf0 = vec_add(vsumf0, vsumf2);
