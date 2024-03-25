@@ -5700,7 +5700,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
-    //const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
@@ -6143,7 +6142,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     const vector signed char lowMask = vec_splats((signed char)0x3);
     const vector signed char lowScaleMask = vec_splats((signed char)0xF);
-    //const vector signed char v0 = vec_splats((signed char)0x0);
     const vector unsigned char v2 = vec_splats((unsigned char)0x2);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
     const vector unsigned char v6 = vec_splats((unsigned char)0x6);
@@ -6787,6 +6785,7 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q3 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
+        // IBM TODO: GCC causes VSR spilling. #pragma GCC unroll 0 can not stop unroll
         for (int j = 0; j < QK_K/128; ++j) {
             vector signed char qxs0 = (vector signed char)vec_xl( 0, q3);
             vector signed char qxs1 = (vector signed char)vec_xl(16, q3);
