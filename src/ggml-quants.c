@@ -6125,6 +6125,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed short q8ysums0 = vec_xl_len(y[i].bsums, 8);
         //vector signed short q8ysums0 = {y[i].bsums[0], y[i].bsums[1], y[i].bsums[2], y[i].bsums[3], (int16_t)0, (int16_t)0, (int16_t)0, (int16_t)0};
 
+        // IBM TODO
         vector signed char q2xmins = (vector signed char)vec_xl_len(x[i].scales, 4);
         //vector signed char q2xmins = {x[i].scales[0], x[i].scales[1], x[i].scales[2], x[i].scales[3], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
         vector signed char vscales = vec_and(q2xmins, lowScaleMask);
@@ -6721,7 +6722,10 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q3 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
-        // IBM TODO: GCC causes VSR spilling. #pragma GCC unroll 0 can not stop unroll
+        // IBM TODO: GCC causes VSR spilling. #pragma GCC unroll 1 can not stop unroll
+#if defined(__GNUG__)
+#pragma GCC unroll 1
+#endif
         for (int j = 0; j < QK_K/128; ++j) {
             vector signed char qxs0 = (vector signed char)vec_xl( 0, q3);
             vector signed char qxs1 = (vector signed char)vec_xl(16, q3);
@@ -7221,6 +7225,7 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         // IBM TODO
         vector signed char vscales = (vector signed char)vec_xl_len(scales, 8);
         //vector signed char vscales = {scales[0], scales[1], scales[2], scales[3], scales[4], scales[5], scales[6], scales[7], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
+        // IBM TODO
         vector signed char qxhs0 = (vector signed char)vec_xl_len(x[i].hmask, 8);
         //vector signed char qxhs0 = {x[i].hmask[0], x[i].hmask[1], x[i].hmask[2], x[i].hmask[3], x[i].hmask[4], x[i].hmask[5], x[i].hmask[6], x[i].hmask[7], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
         qxhs0 = vec_or(qxhs0, vec_sr(vec_sld(qxhs0, qxhs0, 8), (vector unsigned char)v1));
@@ -10170,7 +10175,7 @@ void ggml_vec_dot_iq2_xxs_q8_K(int n, float * restrict s, size_t bs, const void 
         vector signed int vsumi7 = vec_splats((int32_t)0);
 
         const uint16_t * restrict q2 = x[i].qs;
-        const int8_t  * restrict q8 = y[i].qs;
+        const int8_t  *  restrict q8 = y[i].qs;
 
         for (int j = 0; j < QK_K/32; j += 2) {
             uint32_t aux32[4];
@@ -10545,7 +10550,7 @@ void ggml_vec_dot_iq2_xs_q8_K(int n, float * restrict s, size_t bs, const void *
 
         const uint16_t * restrict q2 = x[i].qs;
         const uint8_t  * restrict sc = x[i].scales;
-        const int8_t  * restrict q8 = y[i].qs;
+        const int8_t  *  restrict q8 = y[i].qs;
 
         for (int j = 0; j < QK_K/64; ++j) {
             vector signed long long aux64x2_0 = {*(const int64_t *)(iq2xs_grid + (q2[0] & 511)), *(const int64_t *)(iq2xs_grid + (q2[1] & 511))};
@@ -10877,11 +10882,11 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
         vector signed int vsumi6 = vec_splats((int32_t)0);
         vector signed int vsumi7 = vec_splats((int32_t)0);
 
-        const uint8_t * restrict q2 = x[i].qs;
-        const uint8_t * restrict qh = x[i].qh;
+        const uint8_t *  restrict q2 = x[i].qs;
+        const uint8_t *  restrict qh = x[i].qh;
         const uint16_t * restrict signs = (const uint16_t *)(x[i].qs + QK_K/8);
-        const uint8_t * restrict sc = x[i].scales;
-        const int8_t  * restrict q8 = y[i].qs;
+        const uint8_t *  restrict sc = x[i].scales;
+        const int8_t  *  restrict q8 = y[i].qs;
 
         for (int j = 0; j < QK_K/32; j += 2) {
             vector signed long long aux64x2_0 = {*(const int64_t *)(iq2s_grid + (q2[0] | ((qh[0] << 8) & 0x300))), *(const int64_t *)(iq2s_grid + (q2[1] | ((qh[0] << 6) & 0x300)))};
@@ -10922,6 +10927,7 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
             vector signed short qv2 = vec_add(vec_mule(q2x2, q8y2), vec_mulo(q2x2, q8y2));
             vector signed short qv3 = vec_add(vec_mule(q2x3, q8y3), vec_mulo(q2x3, q8y3));
 
+            // IBM TODO
             vector signed char vsc = (vector signed char)vec_xl_len(sc, 2);
             sc += 2;
             vsc = vec_mergeh(vec_and(vsc, lowMask), vec_sr(vsc, v4));
@@ -11453,11 +11459,11 @@ void ggml_vec_dot_iq3_s_q8_K (int n, float * restrict s, size_t bs, const void *
         vector float vyd = vec_splats(y[i].d);
         vector float vd = vec_mul(vxd, vyd);
 
-        const uint8_t * restrict q3 = x[i].qs;
-        const uint8_t * restrict qh = x[i].qh;
+        const uint8_t *  restrict q3 = x[i].qs;
+        const uint8_t *  restrict qh = x[i].qh;
         const uint16_t * restrict signs = (const uint16_t *)(x[i].signs);
-        const uint8_t * restrict sc = x[i].scales;
-        const int8_t  * restrict q8 = y[i].qs;
+        const uint8_t *  restrict sc = x[i].scales;
+        const int8_t  *  restrict q8 = y[i].qs;
 
         vector signed int vsumi0 = vec_splats((int32_t)0);
         vector signed int vsumi1 = vec_splats((int32_t)0);
