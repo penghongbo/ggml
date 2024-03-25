@@ -6709,8 +6709,6 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 
         vscales = vec_sub(vscales, off);
 
-// IBM TODO, short overflow?
-#if 1
         vector signed int vsumi0 = vec_splats((int32_t)0);
         vector signed int vsumi1 = vec_splats((int32_t)0);
         vector signed int vsumi2 = vec_splats((int32_t)0);
@@ -6719,12 +6717,6 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi5 = vec_splats((int32_t)0);
         vector signed int vsumi6 = vec_splats((int32_t)0);
         vector signed int vsumi7 = vec_splats((int32_t)0);
-#else
-        vector signed short vsumi0 = vec_splats((int16_t)0);
-        vector signed short vsumi1 = vec_splats((int16_t)0);
-        vector signed short vsumi2 = vec_splats((int16_t)0);
-        vector signed short vsumi3 = vec_splats((int16_t)0);
-#endif
 
         const uint8_t * restrict q3 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
@@ -6796,7 +6788,6 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short qv12 = vec_add(vec_mule(q3x12, q8y12), vec_mulo(q3x12, q8y12));
             vector signed short qv13 = vec_add(vec_mule(q3x13, q8y13), vec_mulo(q3x13, q8y13));
 
-#if 1
             vector signed int vsum0 = vec_add(vec_mule(qv00, vs0), vec_mulo(qv00, vs0));
             vector signed int vsum1 = vec_add(vec_mule(qv01, vs1), vec_mulo(qv01, vs1));
             vector signed int vsum2 = vec_add(vec_mule(qv02, vs2), vec_mulo(qv02, vs2));
@@ -6825,28 +6816,6 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
         vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
         vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
-#else
-            vsumi0 = vec_madd(qv00, vs0, vsumi0);
-            vsumi1 = vec_madd(qv02, vs2, vsumi1);
-            vsumi2 = vec_madd(qv10, vs4, vsumi2);
-            vsumi3 = vec_madd(qv12, vs6, vsumi3);
-
-            vsumi0 = vec_madd(qv01, vs1, vsumi0);
-            vsumi1 = vec_madd(qv03, vs3, vsumi1);
-            vsumi2 = vec_madd(qv11, vs5, vsumi2);
-            vsumi3 = vec_madd(qv13, vs7, vsumi3);
-        }
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackh(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackh(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackh(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackh(vsumi3), 0), vd, vsumf3);
-
-        vsumf0 = vec_madd(vec_ctf(vec_unpackl(vsumi0), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_unpackl(vsumi1), 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vec_unpackl(vsumi2), 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vec_unpackl(vsumi3), 0), vd, vsumf3);
-#endif
     }
 
     vsumf0 = vec_add(vsumf0, vsumf2);
