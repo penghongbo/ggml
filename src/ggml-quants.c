@@ -5072,6 +5072,7 @@ void ggml_vec_dot_q5_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector signed char q8y0 = vec_xl(  0, y[i].qs);
         vector signed char q8y1 = vec_xl( 16, y[i].qs);
 
+#if 0
         vector signed short qv0 = vec_mule(q5x0, q8y0);
         vector signed short qv1 = vec_mulo(q5x0, q8y0);
         vector signed short qv2 = vec_mule(q5x1, q8y1);
@@ -5082,6 +5083,15 @@ void ggml_vec_dot_q5_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi1 = vec_add(vec_unpackl(qv0), vec_unpackl(qv1));
         vector signed int vsumi2 = vec_add(vec_unpackh(qv2), vec_unpackh(qv3));
         vector signed int vsumi3 = vec_add(vec_unpackl(qv2), vec_unpackl(qv3));
+#else
+        vector signed short qv0 = vec_add(vec_mule(q5x0, q8y0), vec_mulo(q5x0, q8y0));
+        vector signed short qv1 = vec_add(vec_mule(q5x1, q8y1), vec_mulo(q5x1, q8y1));
+
+        vector signed int vsumi0 = vec_unpackh(qv0);
+        vector signed int vsumi1 = vec_unpackl(qv0);
+        vector signed int vsumi2 = vec_unpackh(qv1);
+        vector signed int vsumi3 = vec_unpackl(qv1);
+#endif
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
