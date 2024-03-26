@@ -7682,8 +7682,6 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf2 = vec_nmsub(vec_ctf(prod2, 0), vdmin, vsumf2);
         vsumf3 = vec_nmsub(vec_ctf(prod3, 0), vdmin, vsumf3);
 
-// IBM TODO: whether use float in inner loop? Current perf shows madd in inner loop is faster.
-#if 1
         vector signed int vsumi0 = vec_splats((int32_t)0);
         vector signed int vsumi1 = vec_splats((int32_t)0);
         vector signed int vsumi2 = vec_splats((int32_t)0);
@@ -7692,38 +7690,52 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi5 = vec_splats((int32_t)0);
         vector signed int vsumi6 = vec_splats((int32_t)0);
         vector signed int vsumi7 = vec_splats((int32_t)0);
-#else
-#endif
 
         const uint8_t * restrict q4 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
-        for (int j = 0; j < QK_K/64; ++j) {
+// IBM TODO: XL unroll by 4 is the best. GCC unroll not good.
+        for (int j = 0; j < QK_K/64; j+=2) {
             vector signed char qxs0 = (vector signed char)vec_xl( 0, q4);
             vector signed char qxs1 = (vector signed char)vec_xl(16, q4);
-            q4 += 32;
+            vector signed char qxs2 = (vector signed char)vec_xl(32, q4);
+            vector signed char qxs3 = (vector signed char)vec_xl(48, q4);
+            q4 += 64;
 
             vector signed char q4x00 = vec_and(qxs0, lowMask);
             vector signed char q4x01 = vec_sr(qxs0, v4);
             vector signed char q4x10 = vec_and(qxs1, lowMask);
             vector signed char q4x11 = vec_sr(qxs1, v4);
+            vector signed char q4x20 = vec_and(qxs2, lowMask);
+            vector signed char q4x21 = vec_sr(qxs2, v4);
+            vector signed char q4x30 = vec_and(qxs3, lowMask);
+            vector signed char q4x31 = vec_sr(qxs3, v4);
 
-            vector signed char q8y00 = vec_xl( 0, q8);
-            vector signed char q8y10 = vec_xl(16, q8);
-            vector signed char q8y01 = vec_xl(32, q8);
-            vector signed char q8y11 = vec_xl(48, q8);
-            q8 += 64;
+            vector signed char q8y00 = vec_xl(  0, q8);
+            vector signed char q8y10 = vec_xl( 16, q8);
+            vector signed char q8y01 = vec_xl( 32, q8);
+            vector signed char q8y11 = vec_xl( 48, q8);
+            vector signed char q8y20 = vec_xl( 64, q8);
+            vector signed char q8y30 = vec_xl( 80, q8);
+            vector signed char q8y21 = vec_xl( 96, q8);
+            vector signed char q8y31 = vec_xl(112, q8);
+            q8 += 128;
 
             vector signed short qv00 = vec_add(vec_mule(q4x00, q8y00), vec_mulo(q4x00, q8y00));
             vector signed short qv01 = vec_add(vec_mule(q4x01, q8y01), vec_mulo(q4x01, q8y01));
             vector signed short qv10 = vec_add(vec_mule(q4x10, q8y10), vec_mulo(q4x10, q8y10));
             vector signed short qv11 = vec_add(vec_mule(q4x11, q8y11), vec_mulo(q4x11, q8y11));
+            vector signed short qv20 = vec_add(vec_mule(q4x20, q8y20), vec_mulo(q4x20, q8y20));
+            vector signed short qv21 = vec_add(vec_mule(q4x21, q8y21), vec_mulo(q4x21, q8y21));
+            vector signed short qv30 = vec_add(vec_mule(q4x30, q8y30), vec_mulo(q4x30, q8y30));
+            vector signed short qv31 = vec_add(vec_mule(q4x31, q8y31), vec_mulo(q4x31, q8y31));
 
             vector signed short vs0 = vec_splat(vscales, 0);
             vector signed short vs1 = vec_splat(vscales, 1);
-            vscales = vec_sld(vscales, vscales, 4);
+            vector signed short vs2 = vec_splat(vscales, 2);
+            vector signed short vs3 = vec_splat(vscales, 3);
+            vscales = vec_sld(vscales, vscales, 8);
 
-#if 1
             vsumi0 = vec_add(vec_mule(qv00, vs0), vsumi0);
             vsumi1 = vec_add(vec_mulo(qv00, vs0), vsumi1);
             vsumi2 = vec_add(vec_mule(qv01, vs0), vsumi2);
@@ -7732,6 +7744,15 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vsumi5 = vec_add(vec_mulo(qv10, vs1), vsumi5);
             vsumi6 = vec_add(vec_mule(qv11, vs1), vsumi6);
             vsumi7 = vec_add(vec_mulo(qv11, vs1), vsumi7);
+
+            vsumi0 = vec_add(vec_mule(qv20, vs2), vsumi0);
+            vsumi1 = vec_add(vec_mulo(qv20, vs2), vsumi1);
+            vsumi2 = vec_add(vec_mule(qv21, vs2), vsumi2);
+            vsumi3 = vec_add(vec_mulo(qv21, vs2), vsumi3);
+            vsumi4 = vec_add(vec_mule(qv30, vs3), vsumi4);
+            vsumi5 = vec_add(vec_mulo(qv30, vs3), vsumi5);
+            vsumi6 = vec_add(vec_mule(qv31, vs3), vsumi6);
+            vsumi7 = vec_add(vec_mulo(qv31, vs3), vsumi7);
         }
 
         vsumi0 = vec_add(vsumi0, vsumi4);
@@ -7743,18 +7764,6 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
         vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
         vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
-#else
-            vector signed int vsum0 = vec_add(vec_mule(qv00, vs0), vec_mulo(qv00, vs0));
-            vector signed int vsum1 = vec_add(vec_mule(qv01, vs0), vec_mulo(qv01, vs0));
-            vector signed int vsum2 = vec_add(vec_mule(qv10, vs1), vec_mulo(qv10, vs1));
-            vector signed int vsum3 = vec_add(vec_mule(qv11, vs1), vec_mulo(qv11, vs1));
-
-            vsumf0 = vec_madd(vec_ctf(vsum0, 0), vd, vsumf0);
-            vsumf1 = vec_madd(vec_ctf(vsum1, 0), vd, vsumf1);
-            vsumf2 = vec_madd(vec_ctf(vsum2, 0), vd, vsumf2);
-            vsumf3 = vec_madd(vec_ctf(vsum3, 0), vd, vsumf3);
-        }
-#endif
     }
 
     vsumf0 = vec_add(vsumf0, vsumf2);
