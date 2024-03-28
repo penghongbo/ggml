@@ -6803,7 +6803,7 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q3 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
-        // IBM TODO: GCC causes VSR spilling. #pragma GCC unroll 1 can not stop unroll
+        // IBM TODO: GCC causes VSR spilling. #pragma GCC unroll 1 can not stop unroll. And that also downgrade XLC perf (may need ifdef __GNUG__).
         for (int j = 0; j < QK_K/128; ++j) {
             __builtin_prefetch(q3, 0, 1);
             __builtin_prefetch(q8, 0, 1);
@@ -7778,7 +7778,7 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q4 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
-// IBM TODO: XL unroll by 4 is the best. GCC unroll not good.
+// IBM TODO: XL unroll by 4 is the best. GCC unroll not good. And that also downgrade XLC perf (may need ifdef __GNUG__).
         for (int j = 0; j < QK_K/64; j+=2) {
             __builtin_prefetch(q4, 0, 1);
             __builtin_prefetch(q8, 0, 1);
