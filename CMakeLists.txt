@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.3)
+cmake_minimum_required (VERSION 3.12)
 project(ggml VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "on")
@@ -44,7 +44,8 @@ option(GGML_NO_ACCELERATE           "ggml: disable Accelerate framework" OFF)
 option(GGML_OPENBLAS                "ggml: use OpenBLAS"                 OFF)
 option(GGML_CLBLAST                 "ggml: use clBLAST"                  OFF)
 option(GGML_HIPBLAS                 "ggml: use hipBLAS"                  OFF)
-option(GGML_CUBLAS                  "ggml: use cuBLAS"                   OFF)
+option(GGML_CUDA                    "ggml: use CUDA"                     OFF)
+option(GGML_CUBLAS                  "ggml: use CUDA (deprecated)"        OFF)
 option(GGML_METAL                   "ggml: use Metal"                    OFF)
 
 option(GGML_CUDA_FORCE_DMMV                 "ggml: use dmmv instead of mmvq CUDA kernels"     OFF)
