@@ -9619,7 +9619,6 @@ void ggml_vec_dot_q6_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed char qxh30 = vec_sl(vec_and((vector signed char)v3, vec_sr(qxhs1, v2)), v4);
             vector signed char qxh31 = vec_sl(vec_and((vector signed char)v3, vec_sr(qxhs1, v6)), v4);
 
-            // IBM TODO: how to remove sub by off like ARM?
             vector signed char q6x00 = vec_sub(vec_or(qxh00, qxs00), off);
             vector signed char q6x01 = vec_sub(vec_or(qxh01, qxs01), off);
             vector signed char q6x10 = vec_sub(vec_or(qxh10, qxs10), off);
