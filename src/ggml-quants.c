@@ -10024,7 +10024,7 @@ void ggml_vec_dot_q6_K_q8_K(int n, float * restrict s, size_t bs, const void * r
 
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].ql, 0, 1);
-        __builtin_prefetch(x[i].qs, 0, 1);
+        __builtin_prefetch(x[i].qh, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
 
         vector float vxd = vec_splats(GGML_FP16_TO_FP32(x[i].d));
