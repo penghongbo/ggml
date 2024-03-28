@@ -11281,7 +11281,6 @@ void ggml_vec_dot_iq3_xxs_q8_K(int n, float * restrict s, size_t bs, const void 
             vector unsigned long long aux64x2_2 = {(unsigned long long)(*(signs64 + ((aux32[1] >>  0) & 127))), (unsigned long long)(*(signs64 + ((aux32[1] >>  7) & 127)))};
             vector unsigned long long aux64x2_3 = {(unsigned long long)(*(signs64 + ((aux32[1] >> 14) & 127))), (unsigned long long)(*(signs64 + ((aux32[1] >> 21) & 127)))};
 
-            // IBM TODO mul?
             vector signed char q3x0 = vec_mul((vector signed char)aux64x2_0, (vector signed char)aux32x4_0);
             vector signed char q3x1 = vec_mul((vector signed char)aux64x2_1, (vector signed char)aux32x4_1);
             vector signed char q3x2 = vec_mul((vector signed char)aux64x2_2, (vector signed char)aux32x4_2);
