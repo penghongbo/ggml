@@ -4756,6 +4756,7 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         const vector unsigned char v0 = vec_splats((unsigned char)0x0);
         // IBM TODO
         vector unsigned short xqh = (vector unsigned short)vec_mergeh(vec_xl_len(x[i].qh, 4), v0);
+        //vector unsigned short xqh = (vector unsigned short)vec_mergeh((vector unsigned char){x[i].qh[0], x[i].qh[1], x[i].qh[2], x[i].qh[3], (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0, (uint8_t)0}, v0);
         uint16_t gindex[8] __attribute__ ((aligned(16)));
         vec_xst(xqh, 0, gindex);
 
@@ -11016,7 +11017,6 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
             q2 += 8;
             qh += 2;
 
-            // IBM TODO BE or LE support?  _mm256_set1_epi32(signs[0] | (signs[1] << 16));
             vector signed char vsigns01 = (vector signed char)vec_splats(*(const uint32_t *)&signs[0]);
             vector signed char vsigns23 = (vector signed char)vec_splats(*(const uint32_t *)&signs[2]);
             signs += 4;
@@ -11049,6 +11049,7 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
 
             // IBM TODO
             vector signed char vsc = (vector signed char)vec_xl_len(sc, 2);
+            //vector signed char vsc = {(int8_t)sc[0], (int8_t)sc[1], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
             sc += 2;
             vsc = vec_mergeh(vec_and(vsc, lowMask), vec_sr(vsc, v4));
             vector signed short vscales = vec_unpackh(vsc);
