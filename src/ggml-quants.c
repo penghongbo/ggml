@@ -5794,7 +5794,6 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const uint8_t * restrict q2 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
 
-        // IBM TODO: GCC 12.2 seems to unroll this loop as j = 0 or 1. Then VSR spills. mtune=p10 and O3 seems to be better.
         for (int j = 0; j < QK_K/128; ++j) {
             __builtin_prefetch(q2, 0, 1);
             __builtin_prefetch(q8, 0, 1);
