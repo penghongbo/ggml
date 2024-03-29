@@ -10920,10 +10920,12 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
     const vector unsigned char mask1 = vec_xl(16, k_mask1);
     const vector signed char mask2 = (vector signed char)vec_xl( 0, k_mask2);
 
+#if 0
     const vector signed char lowMask = vec_splats((signed char)0xF);
     const vector signed short v1 = vec_splats((signed short)0x1);
     const vector signed short v2 = vec_splats((signed short)0x2);
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
+#endif
 
     for (int i = 0; i < nb; ++i) {
         vector float vxd = vec_splats(GGML_FP16_TO_FP32(x[i].d));
@@ -10986,7 +10988,8 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
             vector signed short qv2 = vec_add(vec_mule(q2x2, q8y2), vec_mulo(q2x2, q8y2));
             vector signed short qv3 = vec_add(vec_mule(q2x3, q8y3), vec_mulo(q2x3, q8y3));
 
-            // IBM TODO
+            // IBM TODO: scalar seems to be faster
+#if 0
             vector signed char vsc = (vector signed char)vec_xl_len(sc, 2);
             //vector signed char vsc = {(int8_t)sc[0], (int8_t)sc[1], (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0, (int8_t)0};
             sc += 2;
@@ -10998,6 +11001,18 @@ void ggml_vec_dot_iq2_s_q8_K(int n, float * restrict s, size_t bs, const void * 
             vector signed short vscales1 = vec_splat(vscales, 1);
             vector signed short vscales2 = vec_splat(vscales, 2);
             vector signed short vscales3 = vec_splat(vscales, 3);
+#else
+            const uint16_t ls0 = (uint16_t)(sc[0] & 0xf);
+            const uint16_t ls1 = (uint16_t)(sc[0] >>  4);
+            const uint16_t ls2 = (uint16_t)(sc[1] & 0xf);
+            const uint16_t ls3 = (uint16_t)(sc[1] >>  4);
+            sc += 2;
+
+            vector signed short vscales0 = vec_splats((int16_t)(2*ls0+1));
+            vector signed short vscales1 = vec_splats((int16_t)(2*ls1+1));
+            vector signed short vscales2 = vec_splats((int16_t)(2*ls2+1));
+            vector signed short vscales3 = vec_splats((int16_t)(2*ls3+1));
+#endif
 
             vsumi0 = vec_add(vec_mule(qv0, vscales0), vsumi0);
             vsumi1 = vec_add(vec_mule(qv1, vscales1), vsumi1);
