@@ -5303,8 +5303,6 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
 #elif defined(__POWER9_VECTOR__)
     vector float vsumf0 = vec_splats(0.0f);
     vector float vsumf1 = vec_splats(0.0f);
-    vector float vsumf2 = vec_splats(0.0f);
-    vector float vsumf3 = vec_splats(0.0f);
 
 // IBM TODO
 #pragma GCC unroll 4
@@ -5332,14 +5330,9 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi2 = vec_add(vec_unpackh(qv2), vec_unpackh(qv3));
         vector signed int vsumi3 = vec_add(vec_unpackl(qv2), vec_unpackl(qv3));
 
-        vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
+        vsumf0 = vec_madd(vec_ctf(vec_add(vsumi0, vsumi2), 0), vd, vsumf0);
+        vsumf1 = vec_madd(vec_ctf(vec_add(vsumi1, vsumi3), 0), vd, vsumf1);
     }
-
-    vsumf0 = vec_add(vsumf0, vsumf2);
-    vsumf1 = vec_add(vsumf1, vsumf3);
 
     vsumf0 = vec_add(vsumf0, vsumf1);
 
