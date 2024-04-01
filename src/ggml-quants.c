@@ -4110,10 +4110,8 @@ void ggml_vec_dot_q4_0_q8_0(int n, float * restrict s, size_t bs, const void * r
     const vector signed char v8 = vec_splats((signed char)0x8);
 
     vector float vsumf0 = vec_splats(0.0f);
-    vector float vsumf1 = vec_splats(0.0f);
-    vector float vsumf2 = vec_splats(0.0f);
-    vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 4
     for (int i = 0; i < nb; i++) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -4135,21 +4133,12 @@ void ggml_vec_dot_q4_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv0 = vec_add(vec_mule(q4x0, q8y0), vec_mulo(q4x0, q8y0));
         vector signed short qv1 = vec_add(vec_mule(q4x1, q8y1), vec_mulo(q4x1, q8y1));
 
-        vector signed int vsumi0 = vec_unpackh(qv0);
-        vector signed int vsumi1 = vec_unpackl(qv0);
-        vector signed int vsumi2 = vec_unpackh(qv1);
-        vector signed int vsumi3 = vec_unpackl(qv1);
+        qv0 = vec_add(qv0, qv1);
+
+        vector signed int vsumi0 = vec_add(vec_unpackh(qv0), vec_unpackl(qv0));
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
     }
-
-    vsumf0 = vec_add(vsumf0, vsumf2);
-    vsumf1 = vec_add(vsumf1, vsumf3);
-
-    vsumf0 = vec_add(vsumf0, vsumf1);
 
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 4));
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
@@ -4378,10 +4367,8 @@ void ggml_vec_dot_q4_1_q8_1(int n, float * restrict s, size_t bs, const void * r
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
 
     vector float vsumf0 = vec_splats(0.0f);
-    vector float vsumf1 = vec_splats(0.0f);
-    vector float vsumf2 = vec_splats(0.0f);
-    vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 4
     for (int i = 0; i < nb; i++) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -4404,21 +4391,12 @@ void ggml_vec_dot_q4_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv0 = vec_add(vec_mule(q4x0, q8y0), vec_mulo(q4x0, q8y0));
         vector signed short qv1 = vec_add(vec_mule(q4x1, q8y1), vec_mulo(q4x1, q8y1));
 
-        vector signed int vsumi0 = vec_unpackh(qv0);
-        vector signed int vsumi1 = vec_unpackl(qv0);
-        vector signed int vsumi2 = vec_unpackh(qv1);
-        vector signed int vsumi3 = vec_unpackl(qv1);
+        qv0 = vec_add(qv0, qv1);
+
+        vector signed int vsumi0 = vec_add(vec_unpackh(qv0), vec_unpackl(qv0));
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
     }
-
-    vsumf0 = vec_add(vsumf0, vsumf2);
-    vsumf1 = vec_add(vsumf1, vsumf3);
-
-    vsumf0 = vec_add(vsumf0, vsumf1);
 
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 4));
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
@@ -4714,10 +4692,8 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
     const vector unsigned char v4 = vec_splats((unsigned char)4);
 
     vector float vsumf0 = vec_splats(0.0f);
-    vector float vsumf1 = vec_splats(0.0f);
-    vector float vsumf2 = vec_splats(0.0f);
-    vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 4
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -4743,21 +4719,12 @@ void ggml_vec_dot_q5_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv0 = vec_add(vec_mule(q5x0, q8y0), vec_mulo(q5x0, q8y0));
         vector signed short qv1 = vec_add(vec_mule(q5x1, q8y1), vec_mulo(q5x1, q8y1));
 
-        vector signed int vsumi0 = vec_unpackh(qv0);
-        vector signed int vsumi1 = vec_unpackl(qv0);
-        vector signed int vsumi2 = vec_unpackh(qv1);
-        vector signed int vsumi3 = vec_unpackl(qv1);
+        qv0 = vec_add(qv0, qv1);
+
+        vector signed int vsumi0 = vec_add(vec_unpackh(qv0), vec_unpackl(qv0));
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
     }
-
-    vsumf0 = vec_add(vsumf0, vsumf2);
-    vsumf1 = vec_add(vsumf1, vsumf3);
-
-    vsumf0 = vec_add(vsumf0, vsumf1);
 
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 4));
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
@@ -5072,10 +5039,8 @@ void ggml_vec_dot_q5_1_q8_1(int n, float * restrict s, size_t bs, const void * r
     const vector unsigned char v4 = vec_splats((unsigned char)0x4);
 
     vector float vsumf0 = vec_splats(0.0f);
-    vector float vsumf1 = vec_splats(0.0f);
-    vector float vsumf2 = vec_splats(0.0f);
-    vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 4
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -5105,21 +5070,12 @@ void ggml_vec_dot_q5_1_q8_1(int n, float * restrict s, size_t bs, const void * r
         vector signed short qv0 = vec_add(vec_mule(q5x0, q8y0), vec_mulo(q5x0, q8y0));
         vector signed short qv1 = vec_add(vec_mule(q5x1, q8y1), vec_mulo(q5x1, q8y1));
 
-        vector signed int vsumi0 = vec_unpackh(qv0);
-        vector signed int vsumi1 = vec_unpackl(qv0);
-        vector signed int vsumi2 = vec_unpackh(qv1);
-        vector signed int vsumi3 = vec_unpackl(qv1);
+        qv0 = vec_add(qv0, qv1);
+
+        vector signed int vsumi0 = vec_add(vec_unpackh(qv0), vec_unpackl(qv0));
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
-        vsumf2 = vec_madd(vec_ctf(vsumi2, 0), vd, vsumf2);
-        vsumf3 = vec_madd(vec_ctf(vsumi3, 0), vd, vsumf3);
     }
-
-    vsumf0 = vec_add(vsumf0, vsumf2);
-    vsumf1 = vec_add(vsumf1, vsumf3);
-
-    vsumf0 = vec_add(vsumf0, vsumf1);
 
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 4));
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
@@ -5302,7 +5258,6 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
     *s = sumf;
 #elif defined(__POWER9_VECTOR__)
     vector float vsumf0 = vec_splats(0.0f);
-    vector float vsumf1 = vec_splats(0.0f);
 
 // IBM TODO
 #pragma GCC unroll 4
@@ -5330,11 +5285,13 @@ void ggml_vec_dot_q8_0_q8_0(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi2 = vec_add(vec_unpackh(qv2), vec_unpackh(qv3));
         vector signed int vsumi3 = vec_add(vec_unpackl(qv2), vec_unpackl(qv3));
 
-        vsumf0 = vec_madd(vec_ctf(vec_add(vsumi0, vsumi2), 0), vd, vsumf0);
-        vsumf1 = vec_madd(vec_ctf(vec_add(vsumi1, vsumi3), 0), vd, vsumf1);
-    }
+        vsumi0 = vec_add(vsumi0, vsumi2);
+        vsumi1 = vec_add(vsumi1, vsumi3);
 
-    vsumf0 = vec_add(vsumf0, vsumf1);
+        vsumi0 = vec_add(vsumi0, vsumi1);
+
+        vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
+    }
 
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 4));
     vsumf0 = vec_add(vsumf0, vec_sld(vsumf0, vsumf0, 8));
