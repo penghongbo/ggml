@@ -12202,6 +12202,7 @@ void ggml_vec_dot_iq4_nl_q8_0(int n, float * restrict s, size_t bs, const void *
 
     const vector signed char values = vec_xl( 0, kvalues_iq4nl);
 
+#pragma GCC unroll 4
     for (int ib = 0; ib < nb; ++ib) {
         __builtin_prefetch(x[ib].qs, 0, 1);
         __builtin_prefetch(y[ib].qs, 0, 1);
