@@ -7666,6 +7666,7 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         const int8_t  * restrict q8 = y[i].qs;
 
 // IBM TODO: XL unroll by 4 is the best. GCC unroll not good. And that also downgrade XLC perf (may need ifdef __GNUG__).
+// IBM TODO: manual is better than pragma: 44 vs 47 using GCC
         for (int j = 0; j < QK_K/64; j+=2) {
             __builtin_prefetch(q4, 0, 1);
             __builtin_prefetch(q8, 0, 1);
@@ -7710,23 +7711,20 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short vs3 = vec_splat(vscales, 3);
             vscales = vec_sld(vscales, vscales, 8);
 
+// IBM TODO: add 2 shorts firstly should be OK. 4+8+1 = 13 less than 15 bits.
+            qv00 = vec_add(qv00, qv01);
+            qv10 = vec_add(qv10, qv11);
+            qv20 = vec_add(qv20, qv21);
+            qv30 = vec_add(qv30, qv31);
+
             vsumi0 = vec_add(vec_mule(qv00, vs0), vsumi0);
             vsumi1 = vec_add(vec_mulo(qv00, vs0), vsumi1);
-            vsumi2 = vec_add(vec_mule(qv01, vs0), vsumi2);
-            vsumi3 = vec_add(vec_mulo(qv01, vs0), vsumi3);
-            vsumi4 = vec_add(vec_mule(qv10, vs1), vsumi4);
-            vsumi5 = vec_add(vec_mulo(qv10, vs1), vsumi5);
-            vsumi6 = vec_add(vec_mule(qv11, vs1), vsumi6);
-            vsumi7 = vec_add(vec_mulo(qv11, vs1), vsumi7);
-
-            vsumi0 = vec_add(vec_mule(qv20, vs2), vsumi0);
-            vsumi1 = vec_add(vec_mulo(qv20, vs2), vsumi1);
-            vsumi2 = vec_add(vec_mule(qv21, vs2), vsumi2);
-            vsumi3 = vec_add(vec_mulo(qv21, vs2), vsumi3);
-            vsumi4 = vec_add(vec_mule(qv30, vs3), vsumi4);
-            vsumi5 = vec_add(vec_mulo(qv30, vs3), vsumi5);
-            vsumi6 = vec_add(vec_mule(qv31, vs3), vsumi6);
-            vsumi7 = vec_add(vec_mulo(qv31, vs3), vsumi7);
+            vsumi2 = vec_add(vec_mule(qv10, vs1), vsumi2);
+            vsumi3 = vec_add(vec_mulo(qv10, vs1), vsumi3);
+            vsumi4 = vec_add(vec_mule(qv20, vs2), vsumi4);
+            vsumi5 = vec_add(vec_mulo(qv20, vs2), vsumi5);
+            vsumi6 = vec_add(vec_mule(qv30, vs3), vsumi6);
+            vsumi7 = vec_add(vec_mulo(qv30, vs3), vsumi7);
         }
 
         vsumi0 = vec_add(vsumi0, vsumi4);
@@ -8556,10 +8554,6 @@ void ggml_vec_dot_q5_K_q8_K(int n, float * restrict s, size_t bs, const void * r
         vector signed int vsumi1 = vec_splats((int32_t)0);
         vector signed int vsumi2 = vec_splats((int32_t)0);
         vector signed int vsumi3 = vec_splats((int32_t)0);
-        vector signed int vsumi4 = vec_splats((int32_t)0);
-        vector signed int vsumi5 = vec_splats((int32_t)0);
-        vector signed int vsumi6 = vec_splats((int32_t)0);
-        vector signed int vsumi7 = vec_splats((int32_t)0);
 
         const uint8_t * restrict q5 = x[i].qs;
         const int8_t  * restrict q8 = y[i].qs;
@@ -8604,20 +8598,14 @@ void ggml_vec_dot_q5_K_q8_K(int n, float * restrict s, size_t bs, const void * r
             vector signed short vs1 = vec_splat(vscales, 1);
             vscales = vec_sld(vscales, vscales, 4);
 
+            qv00 = vec_add(qv00, qv01);
+            qv10 = vec_add(qv10, qv11);
+
             vsumi0 = vec_add(vec_mule(qv00, vs0), vsumi0);
             vsumi1 = vec_add(vec_mulo(qv00, vs0), vsumi1);
-            vsumi2 = vec_add(vec_mule(qv01, vs0), vsumi2);
-            vsumi3 = vec_add(vec_mulo(qv01, vs0), vsumi3);
-            vsumi4 = vec_add(vec_mule(qv10, vs1), vsumi4);
-            vsumi5 = vec_add(vec_mulo(qv10, vs1), vsumi5);
-            vsumi6 = vec_add(vec_mule(qv11, vs1), vsumi6);
-            vsumi7 = vec_add(vec_mulo(qv11, vs1), vsumi7);
+            vsumi2 = vec_add(vec_mule(qv10, vs1), vsumi2);
+            vsumi3 = vec_add(vec_mulo(qv10, vs1), vsumi3);
         }
-
-        vsumi0 = vec_add(vsumi0, vsumi4);
-        vsumi1 = vec_add(vsumi1, vsumi5);
-        vsumi2 = vec_add(vsumi2, vsumi6);
-        vsumi3 = vec_add(vsumi3, vsumi7);
 
         vsumf0 = vec_madd(vec_ctf(vsumi0, 0), vd, vsumf0);
         vsumf1 = vec_madd(vec_ctf(vsumi1, 0), vd, vsumf1);
