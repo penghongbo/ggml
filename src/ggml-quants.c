@@ -6078,6 +6078,7 @@ void ggml_vec_dot_q2_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vector float vsumf2 = vec_splats(0.0f);
     vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 2
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -7178,6 +7179,7 @@ void ggml_vec_dot_q3_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vector float vsumf2 = vec_splats(0.0f);
     vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 2
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -8023,6 +8025,7 @@ void ggml_vec_dot_q4_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vector float vsumf2 = vec_splats(0.0f);
     vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 2
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -8931,6 +8934,7 @@ void ggml_vec_dot_q5_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vector float vsumf2 = vec_splats(0.0f);
     vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 2
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].qs, 0, 1);
         __builtin_prefetch(y[i].qs, 0, 1);
@@ -9897,6 +9901,7 @@ void ggml_vec_dot_q6_K_q8_K(int n, float * restrict s, size_t bs, const void * r
     vector float vsumf2 = vec_splats(0.0f);
     vector float vsumf3 = vec_splats(0.0f);
 
+#pragma GCC unroll 2
     for (int i = 0; i < nb; ++i) {
         __builtin_prefetch(x[i].ql, 0, 1);
         __builtin_prefetch(x[i].qh, 0, 1);
